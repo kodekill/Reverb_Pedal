@@ -11,7 +11,6 @@
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_OF_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
-//Drive and Level are what brandon uses 
 int Knob1 = A0;  // Left Pot
 int Knob2 = A1;  // Right Pot
 
@@ -22,112 +21,129 @@ unsigned int Knob2_new = 0;
 unsigned int Knob1_old = 0; // the old pot value which will be compared with the new value.
 unsigned int Knob2_old = 0; //     I'm looking to see if there is a difference between these 
 unsigned int Button_Press = 0;//      In order to determine if I should change the display or not.
+unsigned int num = 0; 
+unsigned int counter = 0; 
+bool change; 
 
 //I'm using this value for now just to keep the light somewhat dim while I proto this
-float myIntensity = .02;  //2% brightness 
+float myIntensity = .02; //2% brightness 
 
 typedef struct {
   int R;
   int G;
   int B;
-  int intensity;
 } RGB;
   
-RGB color, colorPrime;
+RGB color;
 
-void setup()
-{
+void setup(){
   pinMode(PEDAL_BUTTON, INPUT);
-  color = {0, 0, 0, 5};
+  color = {0, 0, 0};
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
   Serial.begin(9600);
 }
 
-
-int Clamp(int x) {        //I'm not sure if I need this in yet or if I can take it out. 
-  if (x < 0) 
-  return 0;
-  
-  else if (x > 255)
-  return 255;
-  
-  else 
-  return x;
-}
-
-void loop() 
-{
+void loop() {
   Knob1_Input();
   Knob2_Input();
-  strip.show();
+  SetPixels();
+  Time_delay();
+  delay(10);
 }
 
 void Knob1_Input(){
-  Knob1_new = analogRead(Knob1);
-  //Serial.print("New = ");
-  //Serial.println(Knob1_new);
+  Knob1_new = 0.9 * Knob1_new + 0.1 * analogRead(Knob1);
+    if(Knob1_new != Knob1_old){
+        change = true; // Change is registered 
+        counter = 0;
+       }
 
-  //Serial.print("Old = ");
-  //Serial.print(Knob1_old);
-  // Try this out if my first idea doesn't work
-     // if(((Knob1_new - Knob1_old) == 5) || ((Knob1_old - Knob1_new) == 5)){
-   if((Knob1_new < Knob1_old)||(Knob1_new > Knob1_old)){
-      if(Knob1_new <= 5)                                                   { strip.setPixelColor(0, strip.Color(0,0,0));  strip.setPixelColor(1, strip.Color(0,0,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob1_new > 5)             && (Knob1_new <= (max_pot/4)))        { strip.setPixelColor(0, strip.Color(0,20,0)); strip.setPixelColor(1, strip.Color(0,0,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob1_new > (max_pot/4))   && (Knob1_new <= (max_pot/2)))        { strip.setPixelColor(0, strip.Color(0,20,0)); strip.setPixelColor(1, strip.Color(0,20,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob1_new > (max_pot/2))   && (Knob1_new <= (max_pot/4)*3))      { strip.setPixelColor(0, strip.Color(0,20,0)); strip.setPixelColor(1, strip.Color(0,20,0)); strip.setPixelColor(2, strip.Color(0,20,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob1_new > (max_pot/4)*3) && (Knob1_new <= (max_pot)))          { strip.setPixelColor(0, strip.Color(0,20,0)); strip.setPixelColor(1, strip.Color(0,20,0)); strip.setPixelColor(2, strip.Color(0,20,0)); strip.setPixelColor(3, strip.Color(0,20,0));}
-  }
+   if(Knob1_new == Knob1_old){
+    change = false;
+   }
+   
+      if (change == true) {
+        counter = 0;
+         if(Knob1_new <= 15)                                                           { Off();}
+             else if((Knob1_new > 15)             && (Knob1_new <= (max_pot/4)))       { Blue(); num = 1;}
+             else if((Knob1_new > (max_pot/4))   && (Knob1_new <= (max_pot/2)))        { Blue(); num = 2;}
+             else if((Knob1_new > (max_pot/2))   && (Knob1_new <= (max_pot/4)*3))      { Blue(); num = 3;}
+             else if((Knob1_new > (max_pot/4)*3) && (Knob1_new <= (max_pot)))          { Blue(); num = 4;}  
+      }
 
-  else {
-   //  strip.setPixelColor(0, strip.Color(0,0,0));  strip.setPixelColor(1, strip.Color(0,0,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));
-  }
-  
-  Knob1_old = Knob1_new;
-  delay(20);
+      else {
+         counter++; 
+      }
+
+   Knob1_old = Knob1_new;     
 }
 
 
 void Knob2_Input(){
-  Knob2_new = analogRead(Knob2);
-  //Serial.print("New = ");
-  //Serial.println(Knob2_new);
+  Knob2_new = 0.9 * Knob2_new + 0.1 * analogRead(Knob2);
+    if(Knob2_new != Knob2_old){
+        change = true; // Change is registered 
+        counter = 0;
+       }
 
-  //Serial.print("Old = ");
-  //Serial.print(Knob2_old);
-  // Try this out if my first idea doesn't work
-     // if(((Knob2_new - Knob2_old) == 5) || ((Knob2_old - Knob2_new) == 5)){
-   if((Knob2_new < Knob2_old)||(Knob2_new > Knob2_old)){
-      if(Knob2_new <= 5)                                                   { strip.setPixelColor(0, strip.Color(0,0,0));  strip.setPixelColor(1, strip.Color(0,0,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob2_new > 5)             && (Knob2_new <= (max_pot/4)))        { strip.setPixelColor(0, strip.Color(0,0,20)); strip.setPixelColor(1, strip.Color(0,0,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob2_new > (max_pot/4))   && (Knob2_new <= (max_pot/2)))        { strip.setPixelColor(0, strip.Color(0,0,20)); strip.setPixelColor(1, strip.Color(0,0,20)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob2_new > (max_pot/2))   && (Knob2_new <= (max_pot/4)*3))      { strip.setPixelColor(0, strip.Color(0,0,20)); strip.setPixelColor(1, strip.Color(0,0,20)); strip.setPixelColor(2, strip.Color(0,0,20)); strip.setPixelColor(3, strip.Color(0,0,0));}
-      if((Knob2_new > (max_pot/4)*3) && (Knob2_new <= (max_pot)))          { strip.setPixelColor(0, strip.Color(0,0,20)); strip.setPixelColor(1, strip.Color(0,0,20)); strip.setPixelColor(2, strip.Color(0,0,20)); strip.setPixelColor(3, strip.Color(0,0,20));}
-  }
+   if(Knob2_new == Knob2_old){
+    change = false;
+   }
+   
+      if (change == true) {
+        counter = 0;
+         if(Knob2_new <= 15)                                                           { Off();}
+             else if((Knob2_new > 15)             && (Knob2_new <= (max_pot/4)))       { Green(); num = 1;}
+             else if((Knob2_new > (max_pot/4))   && (Knob2_new <= (max_pot/2)))        { Green(); num = 2;}
+             else if((Knob2_new > (max_pot/2))   && (Knob2_new <= (max_pot/4)*3))      { Green(); num = 3;}
+             else if((Knob2_new > (max_pot/4)*3) && (Knob2_new <= (max_pot)))          { Green(); num = 4;}  
+      }
 
-  else {
-     //strip.setPixelColor(0, strip.Color(0,0,0));  strip.setPixelColor(1, strip.Color(0,0,0)); strip.setPixelColor(2, strip.Color(0,0,0)); strip.setPixelColor(3, strip.Color(0,0,0));
-  }
-  
-  Knob2_old = Knob2_new;
-  delay(20);
+      else {
+         counter++; 
+      }
+
+   Knob2_old = Knob2_new;     
 }
 
+void Time_delay() {
+  if( counter == 250){
+    for (int j = 0; j <= 4; j++){
+        Off();
+        num = j;
+        SetPixels();
+      }
+      
+      counter = 0;
+      change = false;
+      Serial.println("Reset Counter");
+      delay(800);
+   }
+}
+
+void Blue() {
+  color.R = color.G = 0, color.B = 250;
+}
+
+void Green() {
+  color.R = color.B = 0, color.G = 250;
+}
+
+void Off(){
+  color.R = color.G = color.B = 0; num = 0;
+}
 
 void SetPixels(){
-  //Serial.println(colorPrime.intensity);
-  SetLED(strip.Color(colorPrime.R * colorPrime.intensity*myIntensity, colorPrime.G * colorPrime.intensity*myIntensity, colorPrime.B * colorPrime.intensity*myIntensity), 0); 
+  SetLED(strip.Color(color.R * myIntensity, color.G * myIntensity, color.B * myIntensity), 0, num); 
 }
 
-void SetLED(uint32_t c, uint8_t wait) {
-  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+void SetLED(uint32_t c, uint8_t wait, int x) {
+  int y = x;
+  for (uint16_t i = 0; i <= x; ++i) {
     strip.setPixelColor(i, c);
+    strip.setPixelColor(y, strip.Color(0,0,0));   
     strip.show();
-    delay(wait);
   }
 }
-
-
-
 
